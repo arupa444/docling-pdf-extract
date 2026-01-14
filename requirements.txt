@@ -1,4 +1,14 @@
 docling
 playwright
 
+# use this commend to install the playwright(just to render the website)
 # playwright install
+
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+pydantic[email]
+python-multipart
+
+python-dotenv
