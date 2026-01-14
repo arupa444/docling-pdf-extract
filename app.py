@@ -10,3 +10,9 @@ from docling.datamodel.base_models import InputFormat
 from playwright.sync_api import sync_playwright
 
 
+
+from dotenv import load_dotenv
+load_dotenv()
+
+app = FastAPI(title="Multi Input Rag END-TO-END")
+
