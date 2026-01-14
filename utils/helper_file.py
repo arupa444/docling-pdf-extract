@@ -8,7 +8,7 @@ class HelperFile:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
             page.goto(url)
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(15000)
             html_content = page.content()
             browser.close()
             return html_content
