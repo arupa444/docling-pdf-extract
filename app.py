@@ -13,7 +13,9 @@
 #
 # app = FastAPI(title="Multi Input Rag END-TO-END")
 
-from utils.dataExtrationAndRendering import DataExtrationAndRenderingService
+from utils.dataExtrationAndRendering import DataExtAndRenderingService
 
 
-print(DataExtrationAndRenderingService.websiteDataExtration("https://github.com/arupa444/docling-pdf-extract"))
+# print(DataExtrationAndRenderingService.websiteDataExtration("https://github.com/arupa444/docling-pdf-extract"))
+
+print(DataExtAndRenderingService.anyThingButJSOrSPA("Issue_18_Autumn_2025.pdf"))

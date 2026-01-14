@@ -5,7 +5,7 @@ from utils.helper_file import HelperFile
 from config.config_file import Config
 
 
-class DataExtrationAndRenderingService:
+class DataExtAndRenderingService:
     Config.makeDirectories("rawDataDir")
 
     @staticmethod
