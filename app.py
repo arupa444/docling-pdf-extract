@@ -1,6 +1,6 @@
 from docling.document_converter import DocumentConverter
 
-source = "https://cittaai.com/"  # document per local path or URL
+source = "https://cittaai.com/"
 converter = DocumentConverter()
 result = converter.convert(source)
-print(result.document.export_to_markdown())  # output: "## Docling Technical Report[...]"
+print(result.document.export_to_markdown())
