@@ -146,7 +146,7 @@ async def OCR_On_Folder_Or_Multiple_file_Upload(
 
             await file.close()
 
-    config.jsonStoreForMultiDoc(results)
+    config.jsonStoreForMultiDoc(results, subDir)
     return {"results": results}
 
 
@@ -194,7 +194,7 @@ async def Multiple_OCRs_On_nonJS_nonSPA_Website(
 
         results.append(web_result)
 
-    config.jsonStoreForMultiDoc(results)
+    config.jsonStoreForMultiDoc(results, subDir)
     return {"results": results}
 
 
@@ -243,7 +243,7 @@ async def Multiple_OCRs_On_JS_SPA_Websites(
 
         results.append(web_result)
 
-    config.jsonStoreForMultiDoc(results)
+    config.jsonStoreForMultiDoc(results, subDir)
     return {"results": results}
 
 
@@ -351,7 +351,7 @@ async def RAG_On_Folder_Or_Multiple_file_Uploads(
 
             await file.close()
 
-    savedLocation = config.jsonStoreForMultiDoc(results)
+    savedLocation = config.jsonStoreForMultiDoc(results, subDir)
     ac = agenticChunker.AgenticChunker()
     # 1. Raw Text Input
     raw_text = results
@@ -432,7 +432,7 @@ async def RAG_On_Multiple_nonJS_nonSPA_Website(
 
         results.append(web_result)
 
-    config.jsonStoreForMultiDoc(results)
+    config.jsonStoreForMultiDoc(results, subDir)
     return {"results": results}
 
 
@@ -481,7 +481,7 @@ async def RAG_On_Multiple_JS_SPA_Websites(
 
         results.append(web_result)
 
-    config.jsonStoreForMultiDoc(results)
+    config.jsonStoreForMultiDoc(results, subDir)
     return {"results": results}
 
 
