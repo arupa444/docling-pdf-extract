@@ -15,7 +15,7 @@ class DataExtAndRenderingService:
         return result.document.export_to_markdown()
 
     @staticmethod
-    def websiteDataExtration(source: str) -> str:
+    def websiteDataExtrationJs(source: str) -> str:
         rendered_html = HelperFile.get_dynamic_html(source)
         converter = DocumentConverter()
         result = converter.convert_string(rendered_html, InputFormat.HTML)

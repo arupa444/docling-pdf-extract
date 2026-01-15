@@ -210,7 +210,7 @@ async def Multiple_OCRs_On_JS_SPA_Websites(
         for webLink in webLinks:
             web_result = {}
             try:
-                markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(webLink)
+                markdown_content = DataExtAndRenderingService.websiteDataExtrationJs(webLink)
                 web_result = {
                     "webName": webLink,
                     "markdownContent": markdown_content,
