@@ -69,7 +69,7 @@ app = FastAPI(title="Multi Input Rag END-TO-END")
 #
 
 
-@app.post("/OCR_On_Single_Upload", summary="You can upload any kind of source file")
+@app.post("/OCR_On_Single_Upload", summary="You can upload any kind of source file and get the OCR output....")
 async def OCR_On_Single_Upload(file: UploadFile = File(...)):
 
     file_suffix = Path(file.filename).suffix
@@ -88,7 +88,7 @@ async def OCR_On_Single_Upload(file: UploadFile = File(...)):
             os.remove(tmp_path)
 
 
-@app.post("/OCR_On_Folder_Or_Multiple_file_Uploads", summary="Upload a folder (select multiple files)")
+@app.post("/OCR_On_Folder_Or_Multiple_file_Uploads", summary="Upload a folder or select multiple files and collectively perform OCR and save all the results in a json......")
 async def OCR_On_Folder_Or_Multiple_file_Upload(
         files: List[UploadFile] = File(...)
 ):
