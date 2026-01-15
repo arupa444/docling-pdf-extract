@@ -80,7 +80,7 @@ async def OCR_On_Single_Upload(file: UploadFile = File(...)):
     try:
         markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(tmp_path)
         config.storeMDContent(markdown_content)
-        return {"markdown_content": markdown_content}
+        return {"markdown_content": markdown_content, "SavedLocation": tmp_path}
     except Exception as e:
         return {"error": str(e)}
     finally:
@@ -130,11 +130,6 @@ async def OCR_On_Folder_Or_Multiple_file_Upload(
 
 
 
-
-
-
-
-
 @app.post("/OCR_On_nonJS_nonSPA_Website", summary="You can upload any kind of source file")
 async def OCR_On_nonJS_nonSPA_Website(webLink: str = Form(...)):
     try:
@@ -173,19 +168,6 @@ async def Multiple_OCRs_On_nonJS_nonSPA_Website(
 
     config.jsonStoreForMultiDoc(results)
     return {"results": results}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
