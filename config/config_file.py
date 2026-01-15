@@ -6,7 +6,7 @@ from rich import print
 
 class Config:
     # this is because my python is crasing out.....
-    # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
     @staticmethod
     def makeDirectories(dirName: str) -> None:
@@ -28,11 +28,11 @@ class Config:
             print(f"Error saving file: {e}")
 
     @staticmethod
-    def save_results(timestamp: str, propositions: List[str], chunks: dict, folder_name: str = "vectorStoreDB"):
+    def save_results(savedLocation: str, propositions: List[str], chunks: dict, folder_name: str = "vectorStoreDB"):
         extension = ".json"
 
-        fileNameForPropositions = f"Citta_Propositions_{timestamp}{extension}"
-        fileNameForChunks = f"Citta_Chunks_{timestamp}{extension}"
+        fileNameForPropositions = f"Citta_Propositions_{savedLocation}{extension}"
+        fileNameForChunks = f"Citta_Chunks_{savedLocation}{extension}"
 
 
         os.makedirs(folder_name, exist_ok=True)

@@ -1,3 +1,5 @@
+from rich import print
+
 class Retrieve:
     def retrieve(query, chunker, memory_index):
         print(f"\n[bold magenta]Searching for:[/bold magenta] '{query}'")

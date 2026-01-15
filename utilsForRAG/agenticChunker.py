@@ -216,8 +216,19 @@ class AgenticChunker:
             "current_title": chunk['title']
         })
 
-    def needChunk(self):
-        return self.chunks
+    def load_chunks(self, path="storeDB/chunksArupa1.json"):
+        """
+        Loads previously saved chunks from the JSON file.
+        """
+        if not os.path.exists(path):
+            print(f"[bold red]File not found:[/bold red] {path}")
+            return False
+
+        with open(path, "r", encoding="utf-8") as f:
+            self.chunks = json.load(f)
+
+        print(f"[bold green]Successfully loaded {len(self.chunks)} chunks from disk.[/bold green]")
+        return True
 
     def pretty_print_chunks(self):
         print(f"\n[bold magenta]Final Results: {len(self.chunks)} Chunks Created[/bold magenta]\n")
