@@ -18,7 +18,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 load_dotenv()
 console = Console()
 # import os
-
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 # --- LAYER 3: MEMORY INDEX (Read-Time Performance) ---
