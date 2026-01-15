@@ -16,7 +16,8 @@ class Config:
     @staticmethod
     def storeMDContent(rawData: str, subDir: str = "", target_dir: str = "rawDataDir") -> str | None:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        target_dir = f"{target_dir}/{subDir}"
+        target_dir = f"{target_dir}/{subDir}_{timestamp}"
+        Config.makeDirectories(target_dir)
         extension = ".md"
         filename = f"Citta_{timestamp}{extension}"
         full_path = os.path.join(target_dir, filename)
@@ -33,9 +34,11 @@ class Config:
                      folder_name: str = "vectorStoreDB"):
 
         extension = ".json"
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
         savedLocation = savedLocation.split(".")[0]
-        folder_name = f"{folder_name}/{subDir}"
+        folder_name = f"{folder_name}/{subDir}_{timestamp}"
+        Config.makeDirectories(folder_name)
 
         # File Names
         fileNameForPropositions = f"Citta_Propositions_{savedLocation}{extension}"
@@ -65,7 +68,8 @@ class Config:
     @staticmethod
     def jsonStoreForMultiDoc(rawData: list, subDir: str = "", target_dir: str = "rawDataDir") -> str | None:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        target_dir = f"{target_dir}/{subDir}"
+        target_dir = f"{target_dir}/{subDir}_{timestamp}"
+        Config.makeDirectories(target_dir)
         extension = ".json"
         filename = f"Citta_{timestamp}{extension}"
         full_path = os.path.join(target_dir, filename)

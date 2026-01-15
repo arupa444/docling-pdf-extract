@@ -256,7 +256,7 @@ async def Multiple_OCRs_On_JS_SPA_Websites(
 
 @app.post("/RAG_On_Single_Upload", summary="You can upload any kind of source file and get the RAG output....")
 async def RAG_On_Single_Upload(file: UploadFile = File(...), query: str = Form(...),
-        subDir: str = ""):
+        subDir: str = Form('')):
 
     file_suffix = Path(file.filename).suffix
     with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp_file:
@@ -303,7 +303,7 @@ async def RAG_On_Single_Upload(file: UploadFile = File(...), query: str = Form(.
 
 
 
-        config.save_results(savedLocation, propositions, ac.chunks, memory_index)
+        config.save_results(savedLocation, propositions, ac.chunks, memory_index, subDir)
         return {"Top Result": f"{retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})" ,"Final Answer":final_answer, "markdown_content": markdown_content, "SavedLocation": savedLocation}
 
 
@@ -318,7 +318,7 @@ async def RAG_On_Single_Upload(file: UploadFile = File(...), query: str = Form(.
 async def RAG_On_Folder_Or_Multiple_file_Uploads(
         files: List[UploadFile] = File(...),
         query: str = Form(...),
-        subDir: str = ""
+        subDir: str = Form('')
 ):
     results = []
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -344,48 +344,50 @@ async def RAG_On_Folder_Or_Multiple_file_Uploads(
                 file_result = {
                     "filename": file.filename,
                     "status": "error",
-                    "error": str(e)
+                    "error while extracting data from multiple uploading files": str(e)
                 }
 
             results.append(file_result)
 
             await file.close()
+    try:
+        savedLocation = config.jsonStoreForMultiDoc(results, subDir)
+        ac = agenticChunker.AgenticChunker()
+        # 1. Raw Text Input
+        raw_text = results
 
-    savedLocation = config.jsonStoreForMultiDoc(results, subDir)
-    ac = agenticChunker.AgenticChunker()
-    # 1. Raw Text Input
-    raw_text = results
+        # 2. Ingest Data (Layer 1)
+        propositions = ac.generate_propositions(raw_text)
 
-    # 2. Ingest Data (Layer 1)
-    propositions = ac.generate_propositions(raw_text)
+        print(f"\n[bold cyan]Generated {len(propositions)} Propositions[/bold cyan]")
 
-    print(f"\n[bold cyan]Generated {len(propositions)} Propositions[/bold cyan]")
+        ac.add_propositions(propositions)
+        ac.pretty_print_chunks()
 
-    ac.add_propositions(propositions)
-    ac.pretty_print_chunks()
+        # 3. Build Memory Index (Layer 3)
+        #    We initialize this AFTER ingestion is done.
+        print("\n[bold blue]Building Memory Index...[/bold blue]")
+        memory_index = chunkMemoryIndex.ChunkMemoryIndex(dim=768)
 
-    # 3. Build Memory Index (Layer 3)
-    #    We initialize this AFTER ingestion is done.
-    print("\n[bold blue]Building Memory Index...[/bold blue]")
-    memory_index = chunkMemoryIndex.ChunkMemoryIndex(dim=768)
+        for chunk_id, chunk_data in ac.chunks.items():
+            memory_index.add(chunk_id, chunk_data['embedding'])
 
-    for chunk_id, chunk_data in ac.chunks.items():
-        memory_index.add(chunk_id, chunk_data['embedding'])
+        # 4. Retrieval (Layer 4)
+        retrieved_docs = DBretrieve.Retrieve.retrieve(query, ac, memory_index)
 
-    # 4. Retrieval (Layer 4)
-    retrieved_docs = DBretrieve.Retrieve.retrieve(query, ac, memory_index)
+        print(f"\n[green]Top Result:[/green] {retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})")
 
-    print(f"\n[green]Top Result:[/green] {retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})")
+        # 5. RAG Answer (Layer 5)
+        print("\n[bold blue]Generating Answer...[/bold blue]")
 
-    # 5. RAG Answer (Layer 5)
-    print("\n[bold blue]Generating Answer...[/bold blue]")
+        final_answer = ragAnswer.Answer.answer(query, retrieved_docs, ac.llm)
+        print(f"\n[bold]Final Answer:[/bold]\n{final_answer}")
 
-    final_answer = ragAnswer.Answer.answer(query, retrieved_docs, ac.llm)
-    print(f"\n[bold]Final Answer:[/bold]\n{final_answer}")
-
-    config.save_results(savedLocation, propositions, ac.chunks, memory_index)
-    return {"Top Result": f"{retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})",
-            "Final Answer": final_answer, "markdown_content": markdown_content, "SavedLocation": savedLocation}
+        config.save_results(savedLocation, propositions, ac.chunks, memory_index, subDir)
+        return {"Top Result": f"{retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})",
+                "Final Answer": final_answer, "markdown_content": markdown_content, "SavedLocation": savedLocation}
+    except Exception as e:
+        return {"error while perform RAG... on multiple uploaded file...": str(e)}
 
 
 @app.post("/RAG_On_nonJS_nonSPA_Website", summary="RAG on Non js and Non SPA website")
