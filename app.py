@@ -88,7 +88,7 @@ async def OCR_On_Single_Upload(file: UploadFile = File(...)):
             os.remove(tmp_path)
 
 
-@app.post("/OCR_On_Folder_Or_Multiple_file_Upload", summary="Upload a folder (select multiple files)")
+@app.post("/OCR_On_Folder_Or_Multiple_file_Uploads", summary="Upload a folder (select multiple files)")
 async def OCR_On_Folder_Or_Multiple_file_Upload(
         files: List[UploadFile] = File(...)
 ):
