@@ -6,7 +6,7 @@ from rich import print
 
 class Config:
     # this is because my python is crasing out.....
-    os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
     @staticmethod
     def makeDirectories(dirName: str) -> None:
