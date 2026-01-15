@@ -8,6 +8,7 @@ import requests
 import shutil
 import tempfile
 from pathlib import Path
+import json
 import os
 
 from utils.dataExtrationAndRendering import DataExtAndRenderingService

@@ -30,9 +30,12 @@ class Config:
     @staticmethod
     def save_results(savedLocation: str, propositions: list, chunks: dict, memory_index,
                      folder_name: str = "vectorStoreDB"):
+
         extension = ".json"
 
         savedLocation = savedLocation.split(".")[0]
+
+        folder_name = f"{folder_name}/{savedLocation}"
 
         # File Names
         fileNameForPropositions = f"Citta_Propositions_{savedLocation}{extension}"
