@@ -14,7 +14,7 @@ class Config:
 
 
     @staticmethod
-    def storeMDContent(rawData: str | list, target_dir: str = "rawDataDir") -> str | None:
+    def storeMDContent(rawData: str, target_dir: str = "rawDataDir") -> str | None:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         extension = ".md"
         filename = f"Citta_{timestamp}{extension}"
@@ -48,3 +48,18 @@ class Config:
         with open(chunk_path, "w", encoding="utf-8") as f:
             json.dump(chunks, f, indent=4, ensure_ascii=False)
         print(f"Saved chunks to: [underline]{chunk_path}[/underline]")
+
+
+    @staticmethod
+    def jsonStoreForMultiDoc(rawData: list, target_dir: str = "rawDataDir") -> str | None:
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        extension = ".md"
+        filename = f"Citta_{timestamp}{extension}"
+        full_path = os.path.join(target_dir, filename)
+        try:
+            with open(full_path, "w", encoding="utf-8") as file:
+                json.dump(rawData, file, indent=4, ensure_ascii=False)
+            print(f"File successfully saved at: {full_path}")
+            return str(timestamp)
+        except Exception as e:
+            print(f"Error saving file: {e}")

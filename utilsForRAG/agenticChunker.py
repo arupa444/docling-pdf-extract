@@ -216,24 +216,6 @@ class AgenticChunker:
             "current_title": chunk['title']
         })
 
-    def save_results(self, propositions: List[str]):
-        folder_name = "storeDB"
-        if not os.path.exists(folder_name):
-            os.makedirs(folder_name)
-
-        # Remove embeddings before saving to JSON (they are heavy and not JSON serializable usually)
-        # Or cast them to list if you want to keep them.
-        chunks_to_save = {}
-        for cid, data in self.chunks.items():
-            chunks_to_save[cid] = data.copy()
-            if 'embedding' in chunks_to_save[cid]:
-                # Convert numpy/tensor to list for JSON
-                chunks_to_save[cid]['embedding'] = list(chunks_to_save[cid]['embedding'])
-
-        with open(f"{folder_name}/rrr.json", "w", encoding="utf-8") as f:
-            json.dump(chunks_to_save, f, indent=4, ensure_ascii=False)
-        print(f"Saved to {folder_name}/rrr.json")
-
     def needChunk(self):
         return self.chunks
 

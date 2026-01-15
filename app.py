@@ -141,5 +141,5 @@ async def folder_upload(
 
     # The TemporaryDirectory is automatically deleted here when we exit the 'with' block
     # 4. Store/Save logic
-    config.storeMDContent(results)
+    config.jsonStoreForMultiDoc(results)
     return {"results": results}
