@@ -88,16 +88,11 @@ async def single_upload(file: UploadFile = File(...)):
             os.remove(tmp_path)
 
 
-# ... (Assume your DataExtAndRenderingService and imports are here) ...
-
-@app.post("/OCR_On_Folder_Upload", summary="Upload a folder (select multiple files)")
+@app.post("/OCR_On_Folder_Or_Multiple_file_Upload", summary="Upload a folder (select multiple files)")
 async def folder_upload(
         files: List[UploadFile] = File(...)
 ):
     results = []
-
-    # Create a temporary directory to hold this batch of files
-    # This is cleaner than creating individual temp files in the global temp dir
     with tempfile.TemporaryDirectory() as temp_dir:
 
         for file in files:
@@ -105,17 +100,150 @@ async def folder_upload(
             file_path = None
 
             try:
-                # 1. Construct the path inside our temp directory
-                # We use the filename to keep extensions correct for Docling
                 safe_filename = Path(file.filename).name
                 file_path = os.path.join(temp_dir, safe_filename)
-
-                # 2. Save the uploaded file to disk
                 with open(file_path, "wb") as buffer:
                     shutil.copyfileobj(file.file, buffer)
+                markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(file_path)
 
-                # 3. Process the file
-                # We reuse your existing service logic
+                file_result = {
+                    "filename": file.filename,
+                    "status": "success",
+                    "markdown_content": markdown_content
+                }
+
+            except Exception as e:
+                file_result = {
+                    "filename": file.filename,
+                    "status": "error",
+                    "error": str(e)
+                }
+
+            results.append(file_result)
+
+            await file.close()
+
+    config.jsonStoreForMultiDoc(results)
+    return {"results": results}
+
+
+
+
+
+
+
+
+
+
+@app.post("/OCR_On_nonJS_nonSPA_Website", summary="You can upload any kind of source file")
+async def single_upload(file: UploadFile = File(...)):
+
+    file_suffix = Path(file.filename).suffix
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp_file:
+        shutil.copyfileobj(file.file, tmp_file)
+        tmp_path = tmp_file.name
+
+    try:
+        markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(tmp_path)
+        config.storeMDContent(markdown_content)
+        return {"markdown_content": markdown_content}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+@app.post("/Multiple_OCRs_On_nonJS_nonSPA_Website", summary="Upload a folder (select multiple files)")
+async def folder_upload(
+        files: List[UploadFile] = File(...)
+):
+    results = []
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        for file in files:
+            file_result = {}
+            file_path = None
+
+            try:
+                safe_filename = Path(file.filename).name
+                file_path = os.path.join(temp_dir, safe_filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(file_path)
+
+
+
+                file_result = {
+                    "filename": file.filename,
+                    "markdown_content": markdown_content,
+                    "status": "success",
+                }
+
+            except Exception as e:
+                file_result = {
+                    "filename": file.filename,
+                    "status": "error",
+                    "error": str(e)
+                }
+
+            results.append(file_result)
+            await file.close()
+
+    config.jsonStoreForMultiDoc(results)
+    return {"results": results}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.post("/OCR_On_JS_SPA_Websited", summary="You can upload any kind of source file")
+async def single_upload(file: UploadFile = File(...)):
+
+    file_suffix = Path(file.filename).suffix
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file_suffix) as tmp_file:
+        shutil.copyfileobj(file.file, tmp_file)
+        tmp_path = tmp_file.name
+
+    try:
+        markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(tmp_path)
+        config.storeMDContent(markdown_content)
+        return {"markdown_content": markdown_content}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+
+@app.post("/Multiple_OCRs_On_JS_SPA_Websites", summary="Upload a folder (select multiple files)")
+async def folder_upload(
+        files: List[UploadFile] = File(...)
+):
+    results = []
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        for file in files:
+            file_result = {}
+            file_path = None
+
+            try:
+                safe_filename = Path(file.filename).name
+                file_path = os.path.join(temp_dir, safe_filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
                 markdown_content = DataExtAndRenderingService.anyThingButJSOrSPA(file_path)
 
 
@@ -127,7 +255,6 @@ async def folder_upload(
                 }
 
             except Exception as e:
-                # If one file fails, we log the error but continue processing the others
                 file_result = {
                     "filename": file.filename,
                     "status": "error",
@@ -135,11 +262,7 @@ async def folder_upload(
                 }
 
             results.append(file_result)
-
-            # Explicitly close the file handle from FastAPI
             await file.close()
 
-    # The TemporaryDirectory is automatically deleted here when we exit the 'with' block
-    # 4. Store/Save logic
     config.jsonStoreForMultiDoc(results)
     return {"results": results}
