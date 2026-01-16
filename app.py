@@ -84,11 +84,6 @@ app = FastAPI(title="Multi Input Rag END-TO-END")
 # #
 
 
-class ChatRequest(BaseModel):
-    query: str
-    saved_location: str
-
-
 
 # OCR Part....
 
@@ -786,3 +781,155 @@ async def mdRag(query: str = Form(...),
     except Exception as e:
         return {"error": str(e)}
 
+
+
+from utilsForRAG.ConversationManager import ConversationManager
+from utils.helper_file import HelperFile
+
+helperFile = HelperFile()
+
+# Global instance (faster than recreating)
+conv_manager = ConversationManager()
+
+# Cache for loaded files (avoid reloading same files)
+file_cache = {}
+
+
+@app.post("/RAG_Conversational_Optimized", summary="Optimized RAG with 500-token context")
+async def rag_conversational_optimized(
+        session_id: str = Form(...),
+        query: str = Form(...),
+        file_faiss: UploadFile = File(...),
+        file_ids: UploadFile = File(...),
+        file_chunks: UploadFile = File(...)
+):
+    try:
+        # Read file contents once
+        faiss_content = await file_faiss.read()
+        ids_content = await file_ids.read()
+        chunks_content = await file_chunks.read()
+
+        # Generate cache keys
+        cache_key = f"{helperFile.get_file_hash(faiss_content)}_{helperFile.get_file_hash(chunks_content)}"
+
+        # Check cache first (HUGE speedup for repeated queries)
+        if cache_key in file_cache:
+            print("[CACHE HIT] Using cached index")
+            ac = file_cache[cache_key]["chunker"]
+            memory_index = file_cache[cache_key]["index"]
+        else:
+            print("[CACHE MISS] Loading files")
+            temp_dir = tempfile.mkdtemp()
+
+            try:
+                # Save files
+                path_faiss = os.path.join(temp_dir, "index.faiss")
+                path_ids = os.path.join(temp_dir, "ids.json")
+                path_chunks = os.path.join(temp_dir, "chunks.json")
+
+                with open(path_faiss, "wb") as f:
+                    f.write(faiss_content)
+                with open(path_ids, "wb") as f:
+                    f.write(ids_content)
+                with open(path_chunks, "wb") as f:
+                    f.write(chunks_content)
+
+                # Initialize
+                ac = agenticChunker.AgenticChunker()
+                memory_index = chunkMemoryIndex.ChunkMemoryIndex(dim=768)
+
+                # Load
+                with open(path_chunks, "r", encoding="utf-8") as f:
+                    ac.chunks = json.load(f)
+                memory_index.load_local(path_faiss, path_ids)
+
+                # Cache it (limit cache size)
+                if len(file_cache) > 10:
+                    file_cache.clear()  # Simple eviction
+                file_cache[cache_key] = {
+                    "chunker": ac,
+                    "index": memory_index
+                }
+
+            finally:
+                shutil.rmtree(temp_dir)
+
+        # Get context (fast)
+        context_str = conv_manager.get_context(session_id)
+
+        # Retrieve documents
+        retrieved_docs = DBretrieve.Retrieve.retrieve(query, ac, memory_index)
+
+        if not retrieved_docs:
+            error_msg = "No matches found in the knowledge base."
+            conv_manager.add_exchange(session_id, query, error_msg)
+            return {
+                "session_id": session_id,
+                "message": error_msg,
+                "score": 0,
+                "cached": cache_key in file_cache
+            }
+
+        # Build evidence (only top 3 for speed)
+        evidence_text = "\n\n".join(
+            f"SOURCE: {c['chunk_id']}\n" + "\n".join(f"- {p}" for p in c["evidence"][:5])
+            for c in retrieved_docs[:3]  # Limit to top 3 chunks
+        )
+
+        # Generate answer with minimal prompt
+        from langchain_core.prompts import ChatPromptTemplate
+        from langchain_core.output_parsers import StrOutputParser
+
+        CONV_PROMPT = ChatPromptTemplate.from_messages([
+            ("system", "Answer using conversation context and evidence. Cite sources. Be concise."),
+            ("user", "{context}Q: {query}\n\nEvidence:\n{evidence}")
+        ])
+
+        runnable = CONV_PROMPT | ac.llm | StrOutputParser()
+        final_answer = runnable.invoke({
+            "context": context_str,
+            "query": query,
+            "evidence": evidence_text
+        })
+
+        # Update history (efficient)
+        conv_manager.add_exchange(session_id, query, final_answer)
+
+        # Get stats
+        stats = conv_manager.get_stats(session_id)
+
+        return {
+            "session_id": session_id,
+            "query": query,
+            "final_answer": final_answer,
+            "top_source": retrieved_docs[0]['title'],
+            "score": float(retrieved_docs[0]['score']),
+            "context_tokens": stats["token_count"],
+            "message_count": stats["message_count"],
+            "cached": True  # File was cached
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
+
+
+@app.post("/clear_session_optimized")
+async def clear_session_optimized(session_id: str = Form(...)):
+    """Clear session history"""
+    conv_manager.clear(session_id)
+    return {"message": f"Session {session_id} cleared"}
+
+
+@app.get("/session_stats")
+async def session_stats(session_id: str):
+    """Get session statistics"""
+    return conv_manager.get_stats(session_id)
+
+
+@app.post("/clear_file_cache")
+async def clear_file_cache():
+    """Clear the file cache (admin use)"""
+    file_cache.clear()
+    return {"message": "File cache cleared"}
