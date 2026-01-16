@@ -49,24 +49,82 @@ class AgenticChunker:
     # --- PART 1: PROPOSITION GENERATION ---
     def generate_propositions(self, text: str | dict) -> List[str]:
         if self.print_logging:
-            console.print(f"[bold blue]Generating propositions...[/bold blue]")
+            console.print("[bold blue]Generating propositions...[/bold blue]")
 
         PROMPT = ChatPromptTemplate.from_messages([
-            ("system", """
-            Decompose the text into distinct, atomic propositions. And strictly don't miss any information.
-            Return strictly a JSON list of strings.
-            """),
-            ("user", "{text}")
+            (
+                "system",
+                """
+    You are a high-precision information decomposition engine.
+
+    OBJECTIVE:
+    Decompose the input into COMPLETE, ATOMIC propositions with ZERO information loss.
+
+    INPUT MAY BE:
+    - Plain text
+    - Markdown
+    - Python dictionary / JSON
+    - Dictionary containing multiple sources (files, websites, PDFs)
+    - Mixed content including tables, code blocks, and scraped text
+
+    STRICT RULES (NON-NEGOTIABLE):
+    - DO NOT omit, merge, summarize, generalize, or infer information
+    - EVERY fact, table row, code behavior, config value, and nested key MUST appear
+    - Treat EACH dictionary key-path as a separate logical source
+    - Tables: extract EACH ROW as one or more propositions
+    - Code blocks: extract functional and semantic behavior (not syntax-only summaries)
+    - Lists: each bullet = at least one proposition
+    - Redundant information MUST be kept
+    - If something is unclear, corrupted, or truncated, still create a proposition and FLAG it
+
+    PROPOSITION RULES:
+    - Each proposition must express ONE atomic fact
+    - Propositions must be self-contained and unambiguous
+    - Preserve original meaning exactly
+    - Do NOT add new information
+
+    OUTPUT FORMAT (MANDATORY):
+    Return STRICTLY a valid JSON array of strings.
+    No markdown. No explanations. No surrounding text.
+
+    FINAL CHECK:
+    Before responding, verify that EVERY part of the input is represented by at least one proposition.
+    If anything is missing, STOP and re-process.
+                """
+            ),
+            (
+                "user",
+                """
+    <INPUT_PAYLOAD>
+    {text}
+    </INPUT_PAYLOAD>
+                """
+            )
         ])
 
         runnable = PROMPT | self.llm | StrOutputParser()
         raw_response = runnable.invoke({"text": text})
-        cleaned_response = raw_response.replace("```json", "").replace("```", "").strip()
+        cleaned_response = (
+            raw_response
+            .replace("```json", "")
+            .replace("```", "")
+            .strip()
+        )
 
         try:
-            return json.loads(cleaned_response)
-        except json.JSONDecodeError:
-            return [line for line in cleaned_response.split("\n") if line.strip()]
+            parsed = json.loads(cleaned_response)
+            if isinstance(parsed, list) and all(isinstance(x, str) for x in parsed):
+                print(parsed)
+                return parsed
+            else:
+                raise ValueError("Parsed JSON is not a list of strings")
+
+        except Exception:
+            return [
+                line.strip("-• ").strip()
+                for line in cleaned_response.splitlines()
+                if line.strip()
+            ]
 
     # --- PART 2: THE CHUNKING LOGIC ---
 
