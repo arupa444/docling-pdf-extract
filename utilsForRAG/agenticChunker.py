@@ -53,7 +53,7 @@ class AgenticChunker:
 
         PROMPT = ChatPromptTemplate.from_messages([
             ("system", """
-            Decompose the text into distinct, atomic propositions. 
+            Decompose the text into distinct, atomic propositions. And strictly don't miss any information.
             Return strictly a JSON list of strings.
             """),
             ("user", "{text}")
