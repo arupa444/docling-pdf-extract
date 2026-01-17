@@ -211,30 +211,31 @@ class AgenticChunker:
 
         PROMPT = ChatPromptTemplate.from_messages([
             ("system", """
-        You are a knowledge-structuring judge.
+            You are a knowledge-structuring judge.
 
-        Your task is to decide which of the chunks below
-        the given proposition logically belongs to.
+            Your task is to decide which chunk(s) the proposition
+            should be placed into to preserve semantic continuity.
 
-        Rules:
-        - Select a chunk ONLY if the proposition is a direct,
-          factual or structural fit with the core purpose of that chunk.
-        - Do NOT select chunks based on weak topical similarity.
-        - A proposition may belong to multiple chunks
-          if it serves different structural roles
-          (for example: entity-specific and category-level).
-        - If the proposition does not clearly belong to any chunk,
-          return an empty list.
+            Rules:
+            - Assign the proposition to a chunk if it logically
+              extends, explains, qualifies, defines, or supports
+              the chunk’s topic.
+            - Prefer assignment over rejection when the relationship
+              is reasonably clear.
+            - A proposition may belong to multiple chunks.
+            - Return an empty list ONLY if the proposition is
+              completely unrelated to all chunks.
 
-        Return STRICTLY a JSON list of chunk_ids.
-        Examples:
-        ["C002"]
-        ["C001", "C004"]
-        []
+            Return STRICTLY a JSON list of chunk_ids.
+            Examples:
+            ["C002"]
+            ["C001", "C004"]
+            []
 
-        Do not explain.
-        Do not include any extra text.
-        """),
+            No explanation.
+            No extra text.
+            """)
+            ,
             ("user", "Chunks:\n{outline}\nProposition:\n{proposition}")
         ])
 
