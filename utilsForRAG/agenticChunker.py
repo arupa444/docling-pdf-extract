@@ -283,6 +283,7 @@ class AgenticChunker:
         top_candidates = [cid for cid, score in scored_chunks[:5] if score > 0.75]
 
         if not top_candidates:
+            print("No candidates found.")
             return None
 
         return self._llm_judge_chunk(proposition, top_candidates)
