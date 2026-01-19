@@ -9,6 +9,7 @@ import shutil
 import tempfile
 from pathlib import Path
 from rich import print
+from urllib.parse import urlparse
 import json
 import os
 
@@ -940,11 +941,17 @@ async def clear_file_cache():
 
 @app.post("/full_website_extraction")
 async def full_website_extraction(
-        background_tasks: BackgroundTasks,
-        webSite: str = Form(...),
-        subDir: str = Form('')
+        # background_tasks: BackgroundTasks,
+        webSite: str = Form(...)
 ):
-    background_tasks.add_task(helperFile.run_spider_process, webSite)
+    helperFile.run_spider_process(webSite)
+    print("Full website extraction complete")
+    allowed_domain = urlparse(webSite).netloc
+    print("the dir name : ", allowed_domain)
+
+    helperFile.run_HTMLs_PDFs_to_MDFile_process(allowed_domain)
+    print("HTMLs PDFs to MDFile process complete")
+
 
     return {
         "message": "Crawling started in the background",

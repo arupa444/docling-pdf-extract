@@ -31,3 +31,4 @@ faiss-cpu
 scrapy
 lxml
 beautifulsoup4
+scrapy-playwright

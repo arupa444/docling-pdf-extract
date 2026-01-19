@@ -1,4 +1,4 @@
-import os
+import sys
 import threading
 from pathlib import Path
 from docling.document_converter import DocumentConverter, PdfFormatOption
@@ -9,10 +9,11 @@ from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
 # ---------------------------------------------------------
 # 1. CONFIGURATION
 # ---------------------------------------------------------
-BASE_DIR = Path("data/apmsmeoneMSME")
+allowed_domain = sys.argv[1]
+BASE_DIR = Path(f"storeCurlData/{allowed_domain}")
 PDF_DIR = BASE_DIR / "files"
 HTML_DIR = BASE_DIR / "html"
-OUTPUT_DIR = Path("markdown_output/apmsmeoneMSME")
+OUTPUT_DIR = Path(f"markdown_output/{allowed_domain}")
 
 # A lock to keep console output clean (so lines don't mix up)
 print_lock = threading.Lock()

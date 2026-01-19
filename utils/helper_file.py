@@ -24,4 +24,10 @@ class HelperFile:
     def run_spider_process(url: str):
         # This runs the separate python script
         # sys.executable ensures we use the same python environment (venv)
-        subprocess.run([sys.executable, "run_spider.py", url])
+        subprocess.run([sys.executable, "run_spidy.py", url])
+
+    @staticmethod
+    def run_HTMLs_PDFs_to_MDFile_process(subDirName: str):
+        # This runs the separate python script
+        # sys.executable ensures we use the same python environment (venv)
+        subprocess.run([sys.executable, "HTMLs_PDFs_to_MD.py", subDirName])
