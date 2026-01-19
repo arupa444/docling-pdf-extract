@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Request, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, APIRouter, Request, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import EmailStr
@@ -85,8 +85,6 @@ app = FastAPI(title="Multi Input Rag END-TO-END")
 # config.save_results(propositions)
 # #
 # #
-
-
 
 # OCR Part....
 
@@ -939,10 +937,16 @@ async def clear_file_cache():
     return {"message": "File cache cleared"}
 
 
-#
-# @app.post("/full_website_extraction")
-# async def full_website_extraction(
-#         webSite: str = Form(...),
-#         subDir: str = Form('')
-# ):
-#
+
+@app.post("/full_website_extraction")
+async def full_website_extraction(
+        background_tasks: BackgroundTasks,
+        webSite: str = Form(...),
+        subDir: str = Form('')
+):
+    background_tasks.add_task(helperFile.run_spider_process, webSite)
+
+    return {
+        "message": "Crawling started in the background",
+        "url": webSite
+    }

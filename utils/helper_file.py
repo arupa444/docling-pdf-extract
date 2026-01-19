@@ -1,4 +1,6 @@
 from playwright.async_api import async_playwright
+import subprocess
+import sys
 
 class HelperFile:
     @staticmethod
@@ -17,3 +19,9 @@ class HelperFile:
         """Fast hash for file caching"""
         import hashlib
         return hashlib.md5(file_content).hexdigest()[:16]
+
+    @staticmethod
+    def run_spider_process(url: str):
+        # This runs the separate python script
+        # sys.executable ensures we use the same python environment (venv)
+        subprocess.run([sys.executable, "run_spider.py", url])
