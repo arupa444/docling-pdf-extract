@@ -72,9 +72,9 @@ def save_to_file(content: str, original_path: Path, subfolder_name: str):
 def append_to_results(file_name, markdown_content, type_extracted):
     """Thread-safe append to the global results list."""
     web_result = {
-        "webName": file_name,
+        "webName": file_name.name,
         "markdownContent": markdown_content,
-        "typeExtractedFrom": type_extracted,  # "file" or "html"
+        "extractedFromA": type_extracted,  # "pdf" or "html"
         "status": "success",
     }
 
@@ -107,7 +107,7 @@ def task_process_pdfs():
             save_to_file(markdown, file_path, "files")
 
             # 3. Append to JSON Data List
-            append_to_results(file_path, markdown, "file")
+            append_to_results(file_path, markdown, "pdf")
 
         except Exception as e:
             thread_safe_print(f"  [PDF ERROR] Failed {file_path.name}: {e}")

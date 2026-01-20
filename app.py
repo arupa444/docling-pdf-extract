@@ -952,7 +952,12 @@ async def full_website_extraction(
         print("the dir name : ", allowed_domain)
 
         raw_text = helperFile.run_HTMLs_PDFs_to_MDFile_process(allowed_domain)
-        print("HTMLs PDFs to MDFile process complete")
+
+        # print("\n\n\n\n\n\n\n\n\n\n\n\n\n",type(raw_text),"\n\n\n\n\n\n\n\n\n\n\n\n\n","\n\n\n\n\n\n\n\n\n\n\n\n\n")
+
+        # print("\n\n\n\n\n\n\n\n\n\n\n\n\n",raw_text,"\n\n\n\n\n\n\n\n\n\n\n\n\n")
+
+        print("HTMLs PDFs to MDFile process complete.....")
         ac = agenticChunker.AgenticChunker()
 
         propositions = ac.process_accumulated_data(raw_text)

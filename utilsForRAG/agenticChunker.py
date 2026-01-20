@@ -32,7 +32,7 @@ class AgenticChunker:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-lite",
             google_api_key=api_key,
-            temperature=0
+            temperature=0.1
         )
 
         # STEP 2: Embeddings initialized here
@@ -52,46 +52,51 @@ class AgenticChunker:
         if self.print_logging:
             console.print("[bold blue]Generating propositions...[/bold blue]")
 
+        print("Started generating propositions...")
+
         PROMPT = ChatPromptTemplate.from_messages([
             (
                 "system",
                 """
-    You are a high-precision information decomposition engine.
+            You are an information extraction engine.
 
-    OBJECTIVE:
-    Decompose the input into COMPLETE, ATOMIC propositions with ZERO information loss.
+            Your task is to extract ALL explicit factual information
+            from the input and convert it into atomic propositions.
 
-    INPUT MAY BE:
-    - Plain text
-    - Markdown
-    - Python dictionary / JSON
-    - Dictionary containing multiple sources (files, websites, PDFs)
-    - Mixed content including tables, code blocks, and scraped text
+            IMPORTANT:
+            - The input format (markdown, dict, list, scraped text, PDF text)
+              is NOT information and must NEVER appear in the output.
+            - Do NOT describe formatting, structure, headings, or data types.
 
-    STRICT RULES (NON-NEGOTIABLE):
-    - DO NOT omit, merge, summarize, generalize, or infer information
-    - EVERY fact, table row, code behavior, config value, and nested key MUST appear
-    - Treat EACH dictionary key-path as a separate logical source
-    - Tables: extract EACH ROW as one or more propositions
-    - Code blocks: extract functional and semantic behavior (not syntax-only summaries)
-    - Lists: each bullet = at least one proposition
-    - Redundant information MUST be kept
-    - If something is unclear, corrupted, or truncated, still create a proposition and FLAG it
+            RULES:
+            - Extract ONLY meaningful content facts
+            - Do NOT mention words like "markdown", "json", "dict", "list", "heading"
+            - Do NOT describe structure or formatting
+            - Do NOT summarize or merge facts
+            - Do NOT infer missing information
 
-    PROPOSITION RULES:
-    - Each proposition must express ONE atomic fact
-    - Propositions must be self-contained and unambiguous
-    - Preserve original meaning exactly
-    - Do NOT add new information
+            EXTRACTION RULES:
+            - Each bullet or sentence → one or more propositions
+            - Each table row → propositions based on cell meaning
+            - Each dictionary key–value pair → propositions about the VALUE, not the key name
+            - Code → extract factual behavior, parameters, values, or purpose
 
-    OUTPUT FORMAT (MANDATORY):
-    Return STRICTLY a valid JSON array of strings.
-    No markdown. No explanations. No surrounding text.
+            If text is unclear or noisy, still extract the fact and prefix with:
+            "UNCLEAR:"
 
-    FINAL CHECK:
-    Before responding, verify that EVERY part of the input is represented by at least one proposition.
-    If anything is missing, STOP and re-process.
-                """
+            PROPOSITION RULES:
+            - One fact per proposition
+            - Self-contained and precise
+            - Preserve original meaning
+
+            OUTPUT:
+            Return ONLY a valid JSON array of strings.
+            No explanations. No metadata. No labels.
+
+            FINAL CHECK:
+            Every meaningful statement in the input must appear
+            as at least one proposition.
+            """
             ),
             (
                 "user",
@@ -112,9 +117,11 @@ class AgenticChunker:
             .strip()
         )
 
+        print("Clean response: ",cleaned_response)
+
         try:
             parsed = json.loads(cleaned_response)
-            if isinstance(parsed, list) and all(isinstance(x, str) for x in parsed):
+            if isinstance(parsed, list):
                 print(parsed)
                 return parsed
             else:
@@ -127,7 +134,7 @@ class AgenticChunker:
                 if line.strip()
             ]
 
-    def process_accumulated_data(self, data: str | list | dict )-> List[str]:
+    def process_accumulated_data(self, data: str | List[Any] | dict )-> List[str]:
         """
         Dispatches data to generate_propositions based on type and size.
         """
@@ -154,12 +161,19 @@ class AgenticChunker:
                 # MODERN APPROACH: itertools.batched
                 for batch_tuple in batched(data, 3):
                     # batched returns a tuple, convert to list for your function
+                    print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",batch_tuple,"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
                     batch_list = list(batch_tuple)
 
                     # Pass this chunk of 3 to the LLM
                     props = self.generate_propositions(batch_list)
-                    all_propositions.extend(props)
 
+                    print("Here are the propositions inside the batch:")
+
+                    print(props)
+
+                    all_propositions.extend(props)
+        print(f"Alll Propositions size: {len(all_propositions)}")
+        print(f"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n{all_propositions}\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
         return all_propositions
 
     # --- PART 2: THE CHUNKING LOGIC ---
