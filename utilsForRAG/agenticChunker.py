@@ -9,7 +9,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-
+from tenacity import retry, stop_after_attempt, wait_exponential
 from itertools import batched  # Requires Python 3.12+
 
 
@@ -32,7 +32,9 @@ class AgenticChunker:
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash-lite",
             google_api_key=api_key,
-            temperature=0.1
+            temperature=0.1,
+            max_retries=5,  # <--- Change: Built-in retry logic
+            request_timeout=60  # <--- Change: Prevent hanging indefinitely
         )
 
         # STEP 2: Embeddings initialized here
@@ -40,6 +42,14 @@ class AgenticChunker:
             model="models/embedding-001",
             google_api_key=api_key
         )
+
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=2, max=20))
+    def _embed_with_retry(self, text):
+        try:
+            return self.embedder.embed_query(text)
+        except Exception as e:
+            print(f"Error embedding, retrying... {e}")
+            raise e
 
     def _to_text(self, data):
         """Helper to safely convert Dicts/Lists to Strings"""
@@ -64,57 +74,11 @@ class AgenticChunker:
         print("Started generating propositions...")
 
         PROMPT = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                """
-            You are an information extraction engine.
-
-            Your task is to extract ALL explicit factual information
-            from the input and convert it into atomic propositions.
-
-            IMPORTANT:
-            - The input format (markdown, dict, list, scraped text, PDF text)
-              is NOT information and must NEVER appear in the output.
-            - Do NOT describe formatting, structure, headings, or data types.
-
-            RULES:
-            - Extract ONLY meaningful content facts
-            - Do NOT mention words like "markdown", "json", "dict", "list", "heading"
-            - Do NOT describe structure or formatting
-            - Do NOT summarize or merge facts
-            - Do NOT infer missing information
-
-            EXTRACTION RULES:
-            - Each bullet or sentence → one or more propositions
-            - Each table row → propositions based on cell meaning
-            - Each dictionary key–value pair → propositions about the VALUE, not the key name
-            - Code → extract factual behavior, parameters, values, or purpose
-
-            If text is unclear or noisy, still extract the fact and prefix with:
-            "UNCLEAR:"
-
-            PROPOSITION RULES:
-            - One fact per proposition
-            - Self-contained and precise
-            - Preserve original meaning
-
-            OUTPUT:
-            Return ONLY a valid JSON array of strings.
-            No explanations. No metadata. No labels.
-
-            FINAL CHECK:
-            Every meaningful statement in the input must appear
-            as at least one proposition.
-            """
-            ),
-            (
-                "user",
-                """
-    <INPUT_PAYLOAD>
-    {text}
-    </INPUT_PAYLOAD>
-                """
-            )
+            ("system", """
+            Decompose the text into distinct, atomic propositions. And strictly don't miss any information.
+            Return strictly a JSON list of strings.
+            """),
+            ("user", "{text}")
         ])
 
         runnable = PROMPT | self.llm | StrOutputParser()
@@ -168,7 +132,7 @@ class AgenticChunker:
                 print(f"Batching large list (size {len(data)}) into sets of 3...")
 
                 # MODERN APPROACH: itertools.batched
-                for batch_tuple in batched(data, 3):
+                for batch_tuple in batched(data, 2):
                     # batched returns a tuple, convert to list for your function
                     print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n",batch_tuple,"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
                     batch_list = list(batch_tuple)
@@ -288,7 +252,7 @@ class AgenticChunker:
 
     def _find_relevant_chunk(self, proposition)-> str | None:
         prop_text = self._to_text(proposition)
-        prop_embedding = self.embedder.embed_query(prop_text)
+        prop_embedding = self._embed_with_retry(prop_text)
         scored_chunks = []
         for cid, chunk in self.chunks.items():
             # Uses the embedding of the Canonical Text now (much more accurate)

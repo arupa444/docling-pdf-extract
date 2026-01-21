@@ -954,7 +954,7 @@ async def full_website_extraction(
         allowed_domain = urlparse(webSite).netloc
         print("the dir name : ", allowed_domain)
 
-        raw_text = helperFile.run_HTMLs_PDFs_to_MDFile_process(allowed_domain)
+        # raw_text = helperFile.run_HTMLs_PDFs_to_MDFile_process(allowed_domain)
 
         # print("\n\n\n\n\n\n\n\n\n\n\n\n\n",type(raw_text),"\n\n\n\n\n\n\n\n\n\n\n\n\n","\n\n\n\n\n\n\n\n\n\n\n\n\n")
 
@@ -963,17 +963,21 @@ async def full_website_extraction(
         print("HTMLs PDFs to MDFile process complete.....")
         ac = agenticChunker.AgenticChunker()
 
-        propositions = ac.process_accumulated_data(raw_text)
+        # propositions = ac.process_accumulated_data(raw_text)
+
+
+        extension = ".json"
+        fileNameForPropositions = f"vectorStoreDB/Citta_Propositions_{allowed_domain}{extension}"
+
+        with open(fileNameForPropositions, "r", encoding="utf-8") as f:
+            propositions = json.load(f)
 
         print(f"\n[bold cyan]Generated {len(propositions)} Propositions[/bold cyan]")
 
 
-        extension = ".json"
-        fileNameForPropositions = f"Citta_Propositions_{allowed_domain}{extension}"
-
-        prop_path = os.path.join("vectorStoreDB", fileNameForPropositions)
-        with open(prop_path, "w", encoding="utf-8") as f:
-            json.dump(propositions, f, indent=4, ensure_ascii=False)
+        # prop_path = os.path.join("vectorStoreDB", fileNameForPropositions)
+        # with open(prop_path, "w", encoding="utf-8") as f:
+        #     json.dump(propositions, f, indent=4, ensure_ascii=False)
 
 
         ac.add_propositions(propositions)
