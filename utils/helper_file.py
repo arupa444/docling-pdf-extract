@@ -31,7 +31,7 @@ class HelperFile:
     @staticmethod
     def run_HTMLs_PDFs_to_MDFile_process(subDirName: str):
 
-        # subprocess.run([sys.executable, "HTMLs_PDFs_to_MD.py", subDirName], check=True)
+        subprocess.run([sys.executable, "HTMLs_PDFs_to_MD.py", subDirName], check=True)
         json_output_path = Path(f"storeCurlData/{subDirName}/{subDirName}.json")
 
         # 3. Read the file and return the data

@@ -9,7 +9,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from tenacity import retry, stop_after_attempt, wait_exponential
+# from langchain_huggingface import HuggingFaceEmbeddings
+# from tenacity import retry, stop_after_attempt, wait_exponential
 from itertools import batched  # Requires Python 3.12+
 
 
@@ -39,17 +40,14 @@ class AgenticChunker:
 
         # STEP 2: Embeddings initialized here
         self.embedder = GoogleGenerativeAIEmbeddings(
-            model="models/embedding-001",
+            model="models/text-embedding-004",
             google_api_key=api_key
         )
-
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=2, max=20))
-    def _embed_with_retry(self, text):
-        try:
-            return self.embedder.embed_query(text)
-        except Exception as e:
-            print(f"Error embedding, retrying... {e}")
-            raise e
+        # self.embedder = HuggingFaceEmbeddings(
+        #     model_name="sentence-transformers/all-MiniLM-L6-v2",
+        #     model_kwargs={'device': 'cpu'},
+        #     encode_kwargs={'normalize_embeddings': True}
+        # )
 
     def _to_text(self, data):
         """Helper to safely convert Dicts/Lists to Strings"""
@@ -252,7 +250,7 @@ class AgenticChunker:
 
     def _find_relevant_chunk(self, proposition)-> str | None:
         prop_text = self._to_text(proposition)
-        prop_embedding = self._embed_with_retry(prop_text)
+        prop_embedding = self.embedder.embed_query(prop_text)
         scored_chunks = []
         for cid, chunk in self.chunks.items():
             # Uses the embedding of the Canonical Text now (much more accurate)
@@ -260,7 +258,7 @@ class AgenticChunker:
             scored_chunks.append((cid, score))
 
         scored_chunks.sort(key=lambda x: x[1], reverse=True)
-        top_candidates = [cid for cid, score in scored_chunks[:5] if score > 0.75]
+        top_candidates = [cid for cid, score in scored_chunks[:5] if score > 0.55]
 
         if not top_candidates:
             print("No candidates found.")
