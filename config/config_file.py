@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from typing import List
 from rich import print
+import sqlite3
 
 class Config:
     # this is because my python is crasing out.....
@@ -43,9 +44,49 @@ class Config:
         # File Names
         fileNameForPropositions = f"Citta_Propositions_{savedLocation}{extension}"
         fileNameForChunks = f"Citta_Chunks_{savedLocation}{extension}"
+        extension1 = ".db"
+        fileNameForChunksDB = f"Citta_Chunks_{savedLocation}{extension1}"
 
         # Create Folder
         os.makedirs(folder_name, exist_ok=True)
+
+        print("Folder successfully created")
+
+
+        conn = sqlite3.connect(fileNameForChunksDB)
+        cur = conn.cursor()
+
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS chunks (
+            chunk_id TEXT PRIMARY KEY,
+            chunk_index INTEGER,
+            title TEXT,
+            summary TEXT,
+            propositions TEXT,
+            canonical_text TEXT
+        )
+        """)
+
+        inserted = 0
+
+        for _, chunk in chunks.items():
+            cur.execute("""
+                INSERT OR REPLACE INTO chunks VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                chunk["chunk_id"],
+                chunk.get("chunk_index"),
+                chunk.get("title"),
+                chunk.get("summary"),
+                json.dumps(chunk.get("propositions", [])),
+                chunk.get("canonical_text")
+            ))
+            inserted += 1
+
+        conn.commit()
+        conn.close()
+
+        print(f"{inserted} chunks inserted into chunks.db")
+
 
         # 1. Save Propositions
         prop_path = os.path.join(folder_name, fileNameForPropositions)
