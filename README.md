@@ -29,7 +29,7 @@ This project addresses a critical challenge in RAG development: transforming div
 ### Why This Toolkit?
 
 - 🎯 **Clean Data = Better RAG**: LLMs perform significantly better with structured, clean text
-- 🎯 **Web Scrap = Big Data**: Scrap web pages and websites(nested pages, specific to the domain)
+- 🎯 **Web Scrap = Data extraction**: Scrap web pages and websites(nested pages, specific to the domain)
 - 🔄 **Unified Format**: Converts multiple formats (HTML, PDF, web pages) to Markdown
 - ⚡ **Production-Ready**: Modular architecture with REST API endpoints
 - 🛠️ **Flexible**: Use individual scripts or integrate the full API
