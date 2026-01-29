@@ -160,7 +160,7 @@ Content-Type: application/json
 Body:
 {
   "file/folder": files,
-  subDir: (optional) Name the directory
+  "subDir": (optional) Name the directory
 }
 
 Response:
@@ -187,7 +187,7 @@ Body:
 {
   "webLink": "https://example.com", # if you want to extract a SPA and only one page
   "weblinks": ["https://example.com", "https://example1.com",.....] # multiple link that you want to fetch
-  subDir: (optional) Name the directory
+  "subDir": (optional) Name the directory
 }
 
 Response:
