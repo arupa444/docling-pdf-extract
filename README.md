@@ -4,7 +4,7 @@
 
 **A Python-based document extraction and conversion toolkit for Retrieval-Augmented Generation (RAG) workflows**
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Backend-success.svg)](https://fastapi.tiangolo.com/)
 [![RAG](https://img.shields.io/badge/RAG-Retrieval--Augmented-purple.svg)]()
 [![LangChain](https://img.shields.io/badge/LangChain-Framework-blueviolet.svg)]()
