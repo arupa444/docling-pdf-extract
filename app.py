@@ -950,6 +950,7 @@ async def full_website_extraction_conversation_and_execution(
 
 
         prop_path = os.path.join("vectorStoreDB", fileNameForPropositions)
+        config.makeDirectories(os.path.dirname(prop_path))
         with open(prop_path, "w", encoding="utf-8") as f:
             json.dump(propositions, f, indent=4, ensure_ascii=False)
 
