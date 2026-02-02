@@ -731,65 +731,6 @@ async def rag_from_uploaded_index(
         shutil.rmtree(temp_dir)
 
 
-@app.post("/mdRag", summary="You can upload any kind of source file and get the RAG output....")
-async def mdRag(query: str = Form(...),
-        subDir: str = Form(''),
-        pathLinkOfMDFile: str = Form(...),
-        pathLinkOfJSONFile: str = Form(...)
-        ):
-    try:
-        # Open the file in 'read' mode with utf-8 encoding
-        with open(pathLinkOfMDFile, 'r', encoding='utf-8') as file:
-            content = file.read()
-
-        # Print the content
-        markdown_content = content
-        savedLocation = config.storeMDContent(markdown_content, subDir)
-        ac = agenticChunker.AgenticChunker()
-
-        # 1. Raw Text Input
-
-        with open(pathLinkOfJSONFile, 'r', encoding='utf-8') as f:
-            propositions = json.load(f)
-
-        # 2. Ingest Data (Layer 1)
-
-        print(f"\n[bold cyan]Generated {len(propositions)} Propositions[/bold cyan]")
-
-
-        ac.add_propositions(propositions)
-        ac.pretty_print_chunks()
-
-        # 3. Build Memory Index (Layer 3)
-        #    We initialize this AFTER ingestion is done.
-        print("\n[bold blue]Building Memory Index...[/bold blue]")
-        memory_index = chunkMemoryIndex.ChunkMemoryIndex(dim=768)
-
-        for chunk_id, chunk_data in ac.chunks.items():
-            memory_index.add(chunk_id, chunk_data['embedding'])
-
-        # 4. Retrieval (Layer 4)
-        retrieved_docs = DBretrieve.Retrieve.retrieve(query, ac, memory_index)
-
-        print(f"\n[green]Top Result:[/green] {retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})")
-
-        # 5. RAG Answer (Layer 5)
-        print("\n[bold blue]Generating Answer...[/bold blue]")
-
-
-        final_answer = ragAnswer.Answer.answer(query, retrieved_docs, ac.llm)
-        print(f"\n[bold]Final Answer:[/bold]\n{final_answer}")
-
-
-
-        config.save_results(savedLocation, propositions, ac.chunks, memory_index, subDir)
-        return {"Top Result": f"{retrieved_docs[0]['title']} (Score: {retrieved_docs[0]['score']:.4f})" ,"Final Answer":final_answer, "markdown_content": markdown_content, "SavedLocation": savedLocation}
-
-
-    except Exception as e:
-        return {"error": str(e)}
-
-
 
 from utilsForRAG.ConversationManager import ConversationManager
 from utils.helper_file import HelperFile
@@ -803,8 +744,8 @@ conv_manager = ConversationManager()
 file_cache = {}
 
 
-@app.post("/RAG_Conversational_Optimized", summary="Optimized RAG with 500-token context")
-async def rag_conversational_optimized(
+@app.post("/RAG_Conversational_Endpoint", summary="Optimized RAG with 500-token context")
+async def rag_conversational_endPoint(
         session_id: str = Form(...),
         query: str = Form(...),
         file_faiss: UploadFile = File(...),
@@ -976,7 +917,7 @@ async def full_website_extraction_and_conversation(
 
 
 @app.post("/full_website_extraction_conversation_and_execution")
-async def full_website_extraction_and_execution(
+async def full_website_extraction_conversation_and_execution(
         # background_tasks: BackgroundTasks,
         query: str = Form(...),
         webSite: str = Form(...)
