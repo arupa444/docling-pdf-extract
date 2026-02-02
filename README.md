@@ -473,25 +473,70 @@ self.embedder = HuggingFaceEmbeddings(
 
 #### 4. **Store in Vector Database**
 ```python
-import faiss
-import numpy as np
+def __init__(self, dim=768):
+    self.dim = dim
+    self.index = faiss.IndexFlatIP(dim)
+    ...
+    ...
+    def add(self, chunk_id, embedding):
+        vec = np.array([embedding]).astype("float32")
+        faiss.normalize_L2(vec)
+        self.index.add(vec)
+        self.chunk_ids.append(chunk_id)
+    ...
+    ...
+    def save_local(self, folder_path, filename_prefix):
+        """Saves both the FAISS index and the ID mapping"""
 
-# Create FAISS index
-dimension = embeddings.shape[1]
-index = faiss.IndexFlatL2(dimension)
-index.add(np.array(embeddings))
+        # 1. Save FAISS Binary
+        index_path = os.path.join(folder_path, f"{filename_prefix}.faiss")
+        faiss.write_index(self.index, index_path)
 ```
 
 #### 5. **Query and Retrieve**
 ```python
-# Query
-query = "What is the main topic?"
-query_embedding = model.encode([query])
+    def search(self, query_embedding, k=3):
+    vec = np.array([query_embedding]).astype("float32")
+    faiss.normalize_L2(vec)
 
-# Search
-k = 5  # top 5 results
-distances, indices = index.search(query_embedding, k)
-relevant_chunks = [chunks[i] for i in indices[0]]
+    scores, ids = self.index.search(vec, k)
+
+    results = []
+    for idx, i in enumerate(ids[0]):
+        if i != -1:  # FAISS returns -1 if not enough neighbors found
+            results.append((self.chunk_ids[i], float(scores[0][idx])))
+    return results
+
+class Retrieve:
+    def retrieve(query, chunker, memory_index):
+        print(f"\n[bold magenta]Searching for:[/bold magenta] '{query}'")
+
+        # Embed the query
+        query_embedding = chunker.embedder.embed_query(query)
+
+        # Search Index
+        results = memory_index.search(query_embedding)
+        return ...
+    
+class Answer:
+    def answer(query, retrieved_chunks, llm):
+        evidence_text = "\n\n".join(
+            f"SOURCE ID: {c['chunk_id']}\nEVIDENCE:\n" + "\n".join(f"- {p}" for p in c["evidence"])
+            for c in retrieved_chunks
+        )
+
+        PROMPT = ChatPromptTemplate.from_messages([
+            ("system", """
+            Answer the user's question using ONLY the provided evidence. 
+            Cite the SOURCE ID for every fact you use.
+            If you cannot answer based on the evidence, say so.
+            """),
+            ("user", "Question: {query}\n\nEvidence:\n{evidence}")
+        ])
+
+        runnable = PROMPT | llm | StrOutputParser()
+        return runnable.invoke({"query": query, "evidence": evidence_text})
+    
 ```
 
 ---
