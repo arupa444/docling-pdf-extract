@@ -11,3 +11,6 @@ uv.lock
 venv/
 .venv/
 .idea/
+rawDataDir/
+vectorStoreDB/
+storeCurlData/
